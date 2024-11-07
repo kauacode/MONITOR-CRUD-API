@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VISUALIZAR MONITORES</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Merriweather:wght@400;700&display=swap');
+
+    body {
+        font-family: 'Lato', sans-serif;
+        background-color: #282c34;
+        margin: 0;
+        padding: 0;
+        color: #61dafb;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 20px;
+    }
+
+    h1 {
+        font-family: 'Merriweather', serif;
+        font-size: 28px;
+        color: #61dafb;
+        margin-bottom: 20px;
+    }
+
+    .usuario-info {
+        font-family: 'Merriweather', serif;
+        font-size: 1em;
+        color: #9baec8;
+        margin-bottom: 20px;
+    }
+
+    .monitor-table {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 15px;
+        width: 100%;
+        max-width: 800px;
+    }
+
+    .monitor-card {
+        background-color: #3c4048;
+        border-radius: 10px;
+        padding: 15px;
+        color: #ffffff;
+        text-align: left;
+    }
+
+    .monitor-card h2 {
+        font-size: 20px;
+        color: #61dafb;
+        margin: 0 0 10px;
+    }
+
+    button {
+        font-family: 'Merriweather', serif;
+        background-color: #61dafb;
+        color: #282c34;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 16px;
+        margin-top: 10px;
+    }
+
+    button:hover {
+        background-color: #21a1f1;
+    }
+
+    .btn-container {
+        display: flex;
+        gap: 10px;
+    }
+  </style>
+</head>
+<body>
+<h1>Visualizar Monitores</h1>
+
+<p class="usuario-info" id="usuario"></p>
+
+<div class="monitor-table" id="monitores">
+</div>
+
+<div class="btn-container">
+  <button onclick="window.location.href='MonitorIncluir.html'">Incluir Novo Monitor</button>
+</div>
+
+<script>
+  const usuario = {
+      nome: "Kauã Henrique Braccio"
+  };
+
+  document.getElementById("usuario").innerText = `Usuário: ${usuario.nome}`;
+
+  function fetchMonitores() {
+      fetch("http://localhost:8081/monitores")
+          .then(response => response.json())
+          .then(monitores => {
+              const container = document.getElementById("monitores");
+              container.innerHTML = "";
+
+              monitores.forEach(monitor => {
+                  const monitorCard = document.createElement("div");
+                  monitorCard.className = "monitor-card";
+
+                  const preco = monitor.valor && !isNaN(monitor.valor) ? monitor.valor.toFixed(2) : "Indefinido";
+
+                  monitorCard.innerHTML = `
+                      <h2>${monitor.nome}</h2>
+                      <p><strong>ID:</strong> ${monitor.id}</p>
+                      <p><strong>Tipo:</strong> ${monitor.categoria}</p>
+                      <p><strong>Tamanho:</strong> ${monitor.tamanho} polegadas</p>
+                      <p><strong>Preço:</strong> R$ ${preco}</p>
+                      <div class="btn-container">
+                          <button onclick="editarMonitor(${monitor.id})">Editar</button>
+                          <button onclick="excluirMonitor(${monitor.id})">Excluir</button>
+                      </div>
+                  `;
+
+                  container.appendChild(monitorCard);
+              });
+          })
+          .catch(error => console.error('Erro ao carregar monitores:', error));
+  }
+
+  function editarMonitor(id) {
+      const novoNome = prompt("Digite o novo nome do monitor:");
+      const novaCategoria = prompt("Digite a nova categoria do monitor:");
+      const novoTamanho = prompt("Digite o novo tamanho do monitor:");
+      const novoValor = prompt("Digite o novo valor do monitor:");
+
+      const monitorAtualizado = {
+          nome: novoNome,
+          categoria: novaCategoria,
+          tamanho: parseFloat(novoTamanho),
+          valor: parseFloat(novoValor)
+      };
+
+      fetch(`http://localhost:8081/monitores/${id}`, {
+          method: "PUT",
+          headers: {
+              "Content-Type": "application/json"
+          },
+          body: JSON.stringify(monitorAtualizado)
+      })
+      .then(response => {
+          if (response.ok) {
+              alert("Monitor atualizado com sucesso!");
+              fetchMonitores();
+          } else {
+              alert("Erro ao atualizar monitor.");
+          }
+      });
+  }
+
+  function excluirMonitor(id) {
+      if (confirm("Tem certeza de que deseja excluir este monitor?")) {
+          fetch(`http://localhost:8081/monitores/${id}`, {
+              method: "DELETE"
+          })
+          .then(response => {
+              if (response.ok) {
+                  alert("Monitor excluído com sucesso!");
+                  fetchMonitores();
+              } else {
+                  alert("Erro ao excluir monitor.");
+              }
+          });
+      }
+  }
+
+  window.onload = fetchMonitores;
+</script>
+</body>
+</html>
